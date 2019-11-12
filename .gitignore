@@ -1,0 +1,8 @@
+# junk folders
+__pycache__/
+
+# dataset crap
+dataset/
+dataset_crop_random/
+dataset_crop/
+dataset.zip
