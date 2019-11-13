@@ -65,16 +65,18 @@ class Net(nn.Module):   #Best Model
         self.bn1 = nn.BatchNorm2d(num_kernel)
         self.bn2 = nn.BatchNorm2d(num_kernel)
         self.conv2 = nn.Conv2d(num_kernel, num_kernel, 3)
-        self.fc1 = nn.Linear(1693440, 100) # num_kernel * 45 * 45
+        self.fc1 = nn.Linear(num_kernel*42*42, 100) 
         self.fc2 = nn.Linear(100, hidden_size)
         self.fc3 = nn.Linear(hidden_size, 10)
         self.fc1_bn = nn.BatchNorm1d(100)
         self.fc2_bn = nn.BatchNorm1d(hidden_size)
 
     def forward(self, x):
+        print(x.shape)
         x = self.pool(F.relu(self.bn1(self.conv1(x))))
         x = self.pool(F.relu(self.bn2(self.conv2(x))))
-        x = x.view(-1, 1693440) # 45 * 45 * self.num_kernel
+        print(x.shape)
+        x = x.view(-1, 42*42*self.num_kernel) # 45 * 45 * self.num_kernel
         x = F.relu(self.fc1_bn(self.fc1(x)))
         x = F.relu(self.fc2_bn(self.fc2(x)))
         x = self.fc3(x)
