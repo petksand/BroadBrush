@@ -2,6 +2,7 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
+import pickle
 from collections import Counter
 from skimage.color import rgb2lab, deltaE_cie76
 import os
@@ -65,6 +66,13 @@ def get_avg_colour(avg, n):
 
     return final
 
+def save_list(path, lst):
+    output = open("{}.pkl".format(path), "wb")
+    pickle.dump(avg, output)
+    output.close()
+
+    return True
+
 if __name__ == "__main__":
     path = "artist_dataset/"
     eras = get_files(path)
@@ -82,9 +90,11 @@ if __name__ == "__main__":
                 img = load_img(pic_path)
                 avg.append(get_colours(img,8,False))
             avg = np.array(avg)
-            final = get_avg_colour(pic, num_pics)
-            np.savetxt("averages/{}_{}.csv".format(era_artist), avg, delimiter=",")
-            np.savetxt("final/{}_{}.csv".format(era_artist), final, delimiter=",")
+            final = get_avg_colour(avg, num_pics)
+            save_list("averages/{}_{}".format(era,artist), avg)
+            save_list("final/{}_{}".format(era,artist), final)
+            plt.imshow(final)
+            plt.savefig('final/colours_{}_{}.png'.format(era,artist), bbox_inches='tight')
 
     # plt.show()
     # print(final)
