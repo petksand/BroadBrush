@@ -70,7 +70,7 @@ def comp_era(era, era_averages, img):
     - Gets era, goes through each artist, goes through each of the artists artworks
     - Collects smallest value (closes similarity) per artist in artist_min_sum var
     - Collects min from all artists in min_sum
-     - Returns the min
+    - Returns the min
     """
     # variable to hold minimum values for all artists in era
     min_sum = []
