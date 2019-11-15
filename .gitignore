@@ -3,3 +3,4 @@ dataset/
 artist_dataset/
 dataset_pruned.zip
 dataset.zip
+.vscode
