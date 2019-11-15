@@ -77,8 +77,12 @@ if __name__ == "__main__":
     path = "artist_dataset/"
     eras = get_files(path)
     for era in eras:
+        if era != "Post_Impressionism":
+            continue
         artists = get_files("{}{}/".format(path,era))
         for artist in artists:
+            if artist == "emily_carr" or artist == "paul_cezanne":
+                continue
             pics = get_files("{}{}/{}/".format(path,era,artist))
             num_pics = len(pics)
             avg = []
