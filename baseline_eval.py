@@ -1,23 +1,22 @@
-from sklearn.cluster import KMeans
+import csv
+import os
+import pickle
+import random
+
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import cv2
-import csv
-import random
-import pickle
-from collections import Counter
-from skimage.color import rgb2lab, deltaE_cie76
-import os
-from skimage import io
-from baseline import RGB2HEX, load_img, get_colours, save_list, get_files
-import colorsys
+from skimage.color import deltaE_cie76, rgb2lab
+
+from baseline import RGB2HEX, get_colours, get_files, load_img, save_list
 
 _ERAS = ["Baroque", "Cubism", "Fauvism", "Impressionism", "Post"]
 # _WEIGHTS = [925.0/6700.0, 542.0/6700.0, 280.0/6700.0, 3852.0/6700.0, 1101.0/6700.0]
-_WEIGHTS = [0.18, 0.22, 0.19, 0.15, 0.18]
 
 def unpickle(path):
-    hex = []
+    """
+    Unpickles a file
+    """
     rgb = open(path, "rb")
     colours = pickle.load(rgb)
     rgb.close()
@@ -26,19 +25,22 @@ def unpickle(path):
 
 def get_pictures():
     """
-    gets filepaths of all pictures from filepaths.csv
+    Gets filepaths of all pictures from filepaths.csv
     """
     filepaths = []
+    # open + read file
     with open("filepaths.csv") as f:
         csv_reader = csv.reader(f, delimiter="\n")
         for row in csv_reader:
             filepaths.extend(row)
+
     return filepaths
     
 def get_averages():
     """
-    Unpacks all pickle files in averages folder
+    Unpacks all pickle files in averages folder, sorts them into era 
     """
+    # dictionary to store all top colours
     era_averages = {
         "Baroque": [],
         "Cubism": [],
@@ -59,28 +61,42 @@ def get_averages():
         era_averages[era].append(lst)
 
     return era_averages
-
+    
 
 def comp_era(era, era_averages, img):
-    era_min = None
+    """
+    Compares img with all pictures in the given era. Returns smallest distance
+
+    - Gets era, goes through each artist, goes through each of the artists artworks
+    - Collects smallest value (closes similarity) per artist in artist_min_sum var
+    - Collects min from all artists in min_sum
+     - Returns the min
+    """
+    # variable to hold minimum values for all artists in era
     min_sum = []
+    # get artists from given era
     artists = era_averages[era]
     for artist in artists:
         diff = []
-        artist_min = None
+        # tracks similarity between images
         artist_min_sum = 8000
-        tot = 0
+        # go through each artwork
         for i, picture in enumerate(artist):
             if i > 100:
+                # don't go through more than 100 per artist (for balancing)
                 break
+            # compare the given image and the artist's artwork
             comp = deltaE_cie76(picture, img)
             diff.extend(comp)
+        tot = 0
         for array in diff:
-            tot = np.sum(array[0])
-            if tot < artist_min_sum:
-                artist_min_sum = tot
-        min_sum.extend([artist_min_sum])
-    min_sum = min(min_sum)
+            # sum all similarity vectors per artist + normalize
+            tot += np.sum(array)/max(array)
+        # get average similarity to the artist
+        tot = tot/len(diff)
+        min_sum.extend([tot])
+    # average all values
+    min_sum = sum(min_sum)/len(min_sum)
     return min_sum
         
 
@@ -89,15 +105,17 @@ if __name__ == "__main__":
     pictures = get_pictures()
     # shuffle them
     random.shuffle(pictures)
+    # get top colours from all pictures
     averages = get_averages()
     accuracy = 0
     for i, pic in enumerate(pictures):
+        # get info from pic filepath string
         info = pic.split("_")
         era = info[1].split("/")[1]
         if i > 100:
+            # only going through 100 iterations (not 6700)
             break
         print("{}/{}".format(i, len(pictures)))
-        artist = info[2]
         rgb = load_img(pic)
         # get top 8 colours
         top_8 = [get_colours(rgb, 8, False)]
@@ -105,46 +123,9 @@ if __name__ == "__main__":
         # convert to lab
         lab = rgb2lab([top_8])
         comparisons = [comp_era(time_p, averages, top_8) for time_p in _ERAS]
-        comparisons = [comp*weight for comp,weight in zip(comparisons, _WEIGHTS)]
         print(comparisons)
         predicted_era = _ERAS[comparisons.index(min(comparisons))]
         print("Predicted: {} Expected: {}".format(predicted_era, era))
         if predicted_era == era:
             accuracy += 1
     print("Accuracy {}/100".format(accuracy))
-    
-
-
-
-
-    # colours = unpickle("averages/Cubism_fernand_leger.pkl")
-    # colours = np.uint8(np.asarray(colours))
-    # # convert to lab
-    # colours = rgb2lab(colours)
-
-    # rgb_img = load_img("artist_dataset/Cubism/fernand_leger/fernand_leger_6.jpg")
-    # rgb_img = load_img("artist_dataset/Fauvism/mary_fedden/mary_fedden_6.jpg")
-    # # get top 8 colours
-    # top_8 = [get_colours(rgb_img, 8, False)]
-    # top_8 = np.uint8(np.asarray(top_8))
-    # # convert to lab
-    # hsv_img = rgb2lab([top_8])
-
-    # diff = []
-    # for i, colour in enumerate(colours):
-    #     print(i)
-    #     if i > 50:
-    #         break
-    #     for col in colour:
-    #         comp = deltaE_cie76(col, hsv_img)
-    #         # print(comp)
-    #         diff.extend(comp)
-    # min = None
-    # min_sum = 8000
-    # for array in diff:
-    #     tot = np.sum(array[0])
-    #     if tot < min_sum:
-    #         min = array
-    # print(np.sum(min))
-
-
