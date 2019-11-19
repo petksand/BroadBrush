@@ -1,6 +1,6 @@
 # data set stuff
 dataset/
 artist_dataset/
-dataset_pruned.zip
-dataset.zip
+artist_dataset_cropped/
+*.zip
 .vscode
