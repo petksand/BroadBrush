@@ -6,16 +6,13 @@ import numpy as np
 import scipy.signal as ss
 import torch
 import random
+import pickle
 import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
 from sklearn.preprocessing import OneHotEncoder
 from torchsummary import summary
-
-## DISTINGUISH DATASET ##
-# check which artists from each era contain enough photos (50)
-_ERAS_ = {"Baroque": [], "Cubism": [], "Impressionism": [], "Pop_Art": [], "Realism": [], "Renaissance": []}
-_ARTISTS_ = {}
+from shutil import copyfile, rmtree
 
 def get_files(path):
     """
@@ -26,7 +23,17 @@ def get_files(path):
         files.remove(".DS_Store")
     
     return files
+###############################################################################################################
+##################################### BUILDING DATA SET #######################################################
+###############################################################################################################
 
+# ## DISTINGUISH DATASET ##
+_ERAS_ = {"Baroque": [], "Cubism": [], "Impressionism": [], "Pop_Art": [], "Realism": [], "Renaissance": []}
+_ARTISTS_ = {}
+_ARTWORKS_ = {}
+
+
+# check which artists from each era contain enough photos (50)
 eras = get_files("dataset")
 for era in eras:
     artists = get_files("dataset/{}".format(era))
@@ -62,10 +69,14 @@ for era in _ERAS_:
         for k in range(6):
             random.shuffle(artworks)
             for i, artwork in enumerate(artworks):
-                print(i)
                 if i > 50:
                     # don't collect more than 50 samples from each artist
                     break
+                # keep track of artworks
+                if _ARTWORKS_.get(artist) == None:
+                    _ARTWORKS_[artist] = [artwork.split('.')[0]]
+                else:
+                    _ARTWORKS_[artist].append(artwork.split(".")[0])
                 img = plt.imread(new_path + "/" + artwork)
                 x, y, z = np.shape(img)
                 if x >= 300 and y >= 300:
@@ -75,8 +86,87 @@ for era in _ERAS_:
                     save_path = target_path + era + '/' + artist + "/" + str(x_coord) + "_cropped_" + artwork
                     print(save_path)
                     plt.imsave(save_path, crop)
+
+# dump _ARTWORKS_ into pickle for next step
+output = open("ARTWORKS.pkl".format(path), "wb")
+pickle.dump(_ARTWORKS_, output)
+output.close()
+
+###############################################################################################################
+###############################################################################################################
             
-    
+# SPLITTING DATASET
+# we'll split it 75% training, 15% validation, 10% testing
+# this means 225 training, 45 validation, 30 testing
+# each artwork has ~6 duplicates therefore, for 225 training, pick 37 art pieces
+# each artwork has ~6 duplicates therefore, for 45 validation, pick 7 art pieces
+# each artwork has ~6 duplicates therefore, for 30 testing, pick 5 art pieces
+
+# # open pickle
+# file = open("ARTWORKS.pkl", "rb")
+# _ARTWORKS_ = pickle.load(file)
+# file.close()
+
+# # iterate through cropped images
+# path = "artist_dataset_cropped/"
+# for era in _ERAS_:
+#     artists = get_files(path+era)
+#     for artist in artists:
+#         # make directories for each artist
+#         if not os.path.exists(path+era+"/"+artist+"/"+"training"):
+#             os.makedirs(path+era+"/"+artist+"/"+"training")
+#         if not os.path.exists(path+era+"/"+artist+"/"+"validation"):
+#             os.makedirs(path+era+"/"+artist+"/"+"validation")
+#         if not os.path.exists(path+era+"/"+artist+"/"+"testing"):
+#             os.makedirs(path+era+"/"+artist+"/"+"testing")
+#         src_path = path + era + "/" + artist + "/"
+
+#         train_num = 0
+#         valid_num = 0
+#         test_num = 0
+#         # remove duplicates with set()
+#         for work in set(_ARTWORKS_[artist]):
+#             # start to collect artworks into each folder
+#             for in_file in get_files(src_path):
+#                 if work in in_file:
+#                     if train_num <= 225:
+#                         # move into this folder
+#                         copyfile(src_path+in_file, src_path+"training/" + in_file)
+#                         train_num += 1
+#                         if train_num == 225:
+#                             # break so work isn't copied into another folder
+#                             break
+#                     elif valid_num <= 45:
+#                         # move into this folder
+#                         copyfile(src_path+in_file, src_path+"validation/" + in_file)
+#                         valid_num += 1
+#                         if valid_num == 45:
+#                             # break so work isn't copied into another folder
+#                             break
+#                     elif test_num <= 30:
+#                         # move into this folder
+#                         copyfile(src_path+in_file, src_path+"testing/" + in_file)
+#                         test_num += 1
+#                         if test_num == 30:
+#                             # break so work isn't copied into another folder
+#                             break
+
+
+
+# def teardown():
+#     # iterate through cropped images
+#     path = "artist_dataset_cropped/"
+#     for era in _ERAS_:
+#         artists = get_files(path+era)
+#         for artist in artists:
+#             # make directories for each artist
+#             if os.path.exists(path+era+"/"+artist+"/"+"training"):
+#                 rmtree(path+era+"/"+artist+"/"+"training")
+#             if os.path.exists(path+era+"/"+artist+"/"+"validation"):
+#                 rmtree(path+era+"/"+artist+"/"+"validation")
+#             if os.path.exists(path+era+"/"+artist+"/"+"testing"):
+#                 rmtree(path+era+"/"+artist+"/"+"testing")
+# teardown()
 
 
 
