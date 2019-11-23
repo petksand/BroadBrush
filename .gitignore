@@ -5,6 +5,9 @@ artist_dataset_cropped/
 artist_dataset_test/
 artist_dataset_train/
 artist_dataset_valid/
+era_dataset_test/
+era_dataset_train/
+era_dataset_valid/
 *.zip
 .vscode
 *.pyc
