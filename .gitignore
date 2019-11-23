@@ -2,5 +2,9 @@
 dataset/
 artist_dataset/
 artist_dataset_cropped/
+artist_dataset_test/
+artist_dataset_train/
+artist_dataset_valid/
 *.zip
 .vscode
+*.pyc
