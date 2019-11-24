@@ -1,20 +1,21 @@
 import os
+import pickle
+import random
 import time
+from shutil import copyfile, rmtree
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as ss
 import torch
-import random
-import pickle
 import torch.nn.functional as F
-# from art_model import ArtNet
 import torchvision
 import torchvision.transforms as transforms
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
 from torchsummary import summary
-from shutil import copyfile, rmtree
+
+from art_model import ArtNet
 
 # gor Google CoLab
 if torch.cuda.is_available():
