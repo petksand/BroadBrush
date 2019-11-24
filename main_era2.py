@@ -83,7 +83,7 @@ class Net(nn.Module):   #Best Model
         self.bn1 = nn.BatchNorm2d(num_kernel)
         self.bn2 = nn.BatchNorm2d(num_kernel)
         self.conv2 = nn.Conv2d(num_kernel, num_kernel, 10)
-        self.fc1 = nn.Linear(num_kernel*68*68, 100) 
+        self.fc1 = nn.Linear(num_kernel*145*145, 100) 
         self.fc2 = nn.Linear(100, hidden_size)
         self.fc3 = nn.Linear(hidden_size, 6)
         self.fc1_bn = nn.BatchNorm1d(100)
@@ -92,8 +92,8 @@ class Net(nn.Module):   #Best Model
 
     def forward(self, x):
         x = self.dropout(self.pool(F.relu(self.bn1(self.conv1(x)))))
-        x = self.dropout(self.pool(F.relu(self.bn2(self.conv2(x)))))
-        x = x.view(-1, 68*68*self.num_kernel) # 42 * 42 * self.num_kernel
+        # x = self.dropout(self.pool(F.relu(self.bn2(self.conv2(x)))))
+        x = x.view(-1, 145*145*self.num_kernel) # 42 * 42 * self.num_kernel
         x = self.dropout(F.relu(self.fc1_bn(self.fc1(x))))
         x = F.relu(self.fc2_bn(self.fc2(x)))
         x = self.fc3(x)
@@ -186,37 +186,22 @@ def imshow(img):    # unnormalize
 
 hidden_size = 32
 layers = 2
-num_kernel = 10
+num_kernel = 50
 batch_norm = True
-batch_size = 112
+bs = 112
 lr = 0.0001
 seed = 5
 epochs = 20
 
-root = '/content/dataset_era_535'
-print(os.getcwd())
+train_root = '/content/era_dataset_train'
+valid_root = '/content/era_dataset_valid'
 torch.manual_seed(seed)
-data = datasets.ImageFolder(root, transform=transforms.ToTensor())
-data_loader = torch.utils.data.DataLoader(data, batch_size=1370, shuffle=True)
-print(len(data_loader.dataset))
-mean = 0.0
-std = 0.0
-max_valid_acc = 0
-for files, _ in data_loader:
-    samples = files.size(0)
-    files = files.view(samples, files.size(1), -1)
-    mean += files.mean(2).sum(0)
-    std += files.std(2).sum(0)
-mean /= len(data_loader.dataset)
-std /= len(data_loader.dataset)
-transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
-data = datasets.ImageFolder(root, transform=transform)
-print(len(data_loader.dataset))
-train, validate = train_test_split(data, test_size=0.2, random_state=1)
-# train, overfit = train_test_split(train, test_size=0.001, random_state=1)
-train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
-valid_loader = torch.utils.data.DataLoader(validate, batch_size=batch_size, shuffle=True)
-# overfit_loader = torch.utils.data.DataLoader(overfit, batch_size=batch_size, shuffle=True)
+train = datasets.ImageFolder(train_root, transform=transforms.ToTensor())
+validate = datasets.ImageFolder(valid_root, transform=transforms.ToTensor())
+# test = datasets.ImageFolder(train_root, transform=transforms.ToTensor())
+# train, overfit = train_test_split(train, test_size=0.001, random_state=seed)
+train_loader = torch.utils.data.DataLoader(train, batch_size=bs, shuffle=True)
+valid_loader = torch.utils.data.DataLoader(validate, batch_size=bs, shuffle=True)
 
 dataiter = iter(data_loader)
 images, labels = dataiter.next()
@@ -249,7 +234,6 @@ time.clock()
 for e in range(epochs):  # loop over the dataset multiple times
     accum_loss = 0.0
     tot_corr = 0
-    break
     for i, data in enumerate(train_loader, 0):
         # get the inputs; data is a list of [inputs, labels]
         inputs, labels = data
@@ -271,7 +255,6 @@ for e in range(epochs):  # loop over the dataset multiple times
         _, predicted = torch.max(outputs.data, 1)
         predict.extend(predicted)
         torch.cuda.empty_cache
-        break
     # labels_decoded = decode(labels, labels.shape[0])
     # valid_loss = eval_loss(valid_loader, net)
     # total_valid_loss.append(valid_loss)
@@ -288,7 +271,7 @@ for e in range(epochs):  # loop over the dataset multiple times
         e + 1, accum_loss / (i + 1), train_acc * 100, valid_acc * 100))
 # Valid Loss: {:.5f} | 
 print('Finished Training')
-summary(net, input_size=(3, 299, 299))
+summary(net, input_size=(3, 300, 300))
 # print(time.time() - start)
 # print(max(total_valid_acc))
 # total_loss = savgol_filter(total_loss, 5, 3)
@@ -297,11 +280,11 @@ fig = plt.figure()
 ax = plt.subplot(111)
 ax.plot(range(0, epochs), total_loss, label='Training Data')
 # ax.plot(range(0, epochs), total_valid_loss, label='Validation Data')
-plt.title('Over Fitting: Loss')
+plt.title('CNN for Era: Loss')
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
 ax.legend()
-plt.savefig("loss_bb_valid300.png")
+plt.savefig("loss_cnn.png")
 plt.show()
 
 fig = plt.figure()
@@ -315,12 +298,14 @@ ax.plot(range(0, epochs), total_valid_acc,
 # ax.plot(range(0, len(total_valid_acc) * args.eval_every, args.eval_every), total_valid_acc,
 #         label='Validation Data ')
 plt.ylim(0, 1)
-plt.title('Preliminary Training and Validation: Accuracy')
+plt.title('CNN for Era: Accuracy')
 plt.xlabel("Epochs")
 plt.ylabel("Accuracy")
 ax.legend()
-plt.savefig("acc_bb_valid300.png")
+plt.savefig("acc_cnn.png")
 true = [true[i].item() for i in range(len(true))]
 predict = [predict[i].item() for i in range(len(predict))]
 print(confusion_matrix(true, predict))
 plt.show()
+
+!unzip /content/era_dataset_train.zip

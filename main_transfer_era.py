@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 
 ########################################################################################################################
 
-# Calculates accuracy
+
 def evaluate_ce(loader, net):
     net.eval()
     correct = 0
@@ -31,25 +31,26 @@ def evaluate_ce(loader, net):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
     return correct/total
-# Calculates loss
+
 
 def eval_loss(loader, net):
-    net.eval()
-    total = 0
-    total_loss = 0
-    net.eval()
-    for i, data in enumerate(loader, 0):
-        # get the inputs; data is a list of [inputs, labels]
-        inputs, labels = data
-        if torch.cuda.is_available():
-            inputs, labels = inputs.to(device), labels.to(device)
-        outputs = net(inputs)
-        loss = criterion(input=outputs, target=labels).mean()
-        total_loss += loss
-        total += 1
+    with torch.no_grad():
+        net.eval()
+        total = 0
+        total_loss = 0
+        net.eval()
+        for i, data in enumerate(loader, 0):
+            # get the inputs; data is a list of [inputs, labels]
+            inputs, labels = data
+            if torch.cuda.is_available():
+                inputs, labels = inputs.to(device), labels.to(device)
+            outputs = net(inputs)
+            loss = criterion(input=outputs, target=labels).mean()
+            total_loss += loss
+            total += 1
     return total_loss/total
 
-# Generates figures
+
 def make_figs(epochs, net, total_loss, total_valid_loss, total_train_acc, total_valid_acc, save, name):
     summary(net, input_size=(3, 299, 299))
     print(max(total_valid_acc))
@@ -109,9 +110,10 @@ def train_model(model, train_loader, valid_loader, criterion, optimizer, schedul
             loss = criterion(input=outputs, target=labels).mean()
             loss.backward()
             optimizer.step()
-            scheduler.step()
             # print statistics
             accum_loss += loss
+
+        scheduler.step()
         valid_loss = eval_loss(valid_loader, model)
         total_valid_loss.append(valid_loss)
         valid_acc = evaluate_ce(valid_loader, model)
@@ -122,52 +124,62 @@ def train_model(model, train_loader, valid_loader, criterion, optimizer, schedul
         total_loss.append(loss)
         train_acc = evaluate_ce(train_loader, model)
         total_train_acc.append(train_acc)
-        print('Epoch {} | Training Loss: {:.5f} | Training Acc: {:.1f}% |'.format(
-        e + 1, accum_loss / (i + 1), train_acc * 100, valid_loss, valid_acc * 100))
+        print('Epoch {} | Training Loss: {:.5f} | Training Acc: {:.1f}% | Test Loss: {:.5f} | Test Acc: {:.1f}% |'.format(
+        e + 1, accum_loss / (i + 1), train_acc * 100, valid_loss, valid_acc * 100), flush=True)
     make_figs(epochs, model, total_loss, total_valid_loss, total_train_acc, total_valid_acc, True, "transfer_era")
     return model
 
 
 ########################################################################################################################
-# This section below loads the different data into the program
-train_root = '/Users/stephenbrade/ECE324/BroadBrush/era_dataset_train'
-valid_root = '/Users/stephenbrade/ECE324/BroadBrush/era_dataset_valid'
+
+train_root = os.path.join(os.getcwd(), 'era_dataset_train')
+valid_root = os.path.join(os.getcwd(), 'era_dataset_valid')
 # test_root = '/Users/stephenbrade/ECE324/BroadBrush/era_dataset_test'
-bs = 32
+bs = 64
 epochs = 30
 seed = 15
 lr = 0.01
 
 torch.manual_seed(seed)
-train = datasets.ImageFolder(train_root, transform=transforms.ToTensor())
-validate = datasets.ImageFolder(train_root, transform=transforms.ToTensor())
-# test = datasets.ImageFolder(train_root, transform=transforms.ToTensor())
-# train, overfit = train_test_split(train, test_size=0.001, random_state=seed)
 
+transform_train = transforms.Compose([
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Lambda(lambda x: x + 0.01 * torch.randn_like(x)),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+transform_test = transforms.Compose(
+    [transforms.ToTensor(),
+     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])]
+)
+
+train = datasets.ImageFolder(train_root, transform=transform_train)
+validate = datasets.ImageFolder(valid_root, transform=transform_test)
+# test = datasets.ImageFolder(train_root, transform=transforms.ToTensor())
+# train, overfit = train_test_split(train, test_size=0.003, random_state=seed)
 
 train_loader = torch.utils.data.DataLoader(train, batch_size=bs, shuffle=True)
 valid_loader = torch.utils.data.DataLoader(validate, batch_size=bs, shuffle=True)
 # test_loader = torch.utils.data.DataLoader(test, batch_size=bs, shuffle=True)
 # overfit_loader = torch.utils.data.DataLoader(overfit, batch_size=bs, shuffle=True)
 
-# INnstantiates GPU device
+#Need to make this in a way that it will work and retain dataset sizes
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-# Loads pretrained model
-model_ft = models.resnet18(pretrained=True)
-num_ftrs = model_ft.fc.in_features
-# Here the size of each output sample is set to 2.
-# Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
-model_ft.fc = nn.Linear(num_ftrs, 6)
 
-model_ft = model_ft.to(device)
+model_ft = models.resnet101(pretrained='imagenet')
+model_ft.fc = nn.Linear(model_ft.fc.in_features, 6)
+model_ft.cuda()
+model_ft = torch.nn.DataParallel(model_ft, device_ids=range(torch.cuda.device_count()))
 
 criterion = nn.CrossEntropyLoss()
 
-# Observe that all parameters are being optimized
-optimizer_ft = optim.Adam(model_ft.parameters(), lr=lr)
+# Observe that all pasrameters are being optimized
+optimizer_ft = optim.SGD(model_ft.parameters(), lr=lr, weight_decay=2e-2, momentum=0.1)
 
 # Decay LR by a factor of 0.1 every 7 epochs
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
-# Trains model and calls all above functions
+exp_lr_scheduler = lr_scheduler.ExponentialLR(optimizer_ft, gamma=0.9)
+
+
 trained_model = train_model(model_ft, train_loader, valid_loader, criterion, optimizer_ft, exp_lr_scheduler, epochs, device)
 
