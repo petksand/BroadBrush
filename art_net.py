@@ -1,18 +1,14 @@
 import os
-<<<<<<< HEAD
 import pickle
 import random
 import time
 from shutil import copyfile, rmtree
-=======
 import time
->>>>>>> 020ee17b399f810c775b8fac0292689ed79a9a76
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as ss
 import torch
-<<<<<<< HEAD
 import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
@@ -21,7 +17,6 @@ from sklearn.preprocessing import OneHotEncoder
 from torchsummary import summary
 
 from art_model import ArtNet
-=======
 import random
 import pickle
 import torch.nn.functional as F
@@ -32,7 +27,6 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
 from torchsummary import summary
 from shutil import copyfile, rmtree
->>>>>>> 020ee17b399f810c775b8fac0292689ed79a9a76
 
 # gor Google CoLab
 if torch.cuda.is_available():
