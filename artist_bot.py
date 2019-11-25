@@ -54,6 +54,13 @@ transform = transforms.Compose(
     ]
 )
 
+transform_train = transforms.Compose([
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Lambda(lambda x: x + 0.01 * torch.randn_like(x)),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
 # ArtNet = get_model("artist_model.pt", transfer=False)
 ArtNet = get_model("artist_resnet.pt")
 EraNet = get_model("era_resnet.pt", art=False)
