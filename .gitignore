@@ -11,3 +11,4 @@ era_dataset_valid/
 *.zip
 .vscode
 *.pyc
+*.pt
