@@ -3,7 +3,6 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-import spacy
 import torch
 import torch.nn as nn
 import torchtext
@@ -54,7 +53,7 @@ transform = transforms.Compose(
     ]
 )
 
-transform_train = transforms.Compose([
+transform = transforms.Compose([
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     transforms.Lambda(lambda x: x + 0.01 * torch.randn_like(x)),
