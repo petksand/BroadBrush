@@ -1,8 +1,20 @@
 # junk folders
 __pycache__/
 
-# dataset crap
+# data set stuff
+dataset/
+artist_dataset/
+artist_dataset_cropped/
+artist_dataset_test/
+artist_dataset_train/
+artist_dataset_valid/
 dataset/
 dataset_crop_random/
 dataset_crop/
-dataset.zip
+era_dataset_test/
+era_dataset_train/
+era_dataset_valid/
+*.zip
+.vscode
+*.pyc
+*.pt
