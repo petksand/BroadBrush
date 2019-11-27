@@ -66,7 +66,7 @@ EraNet = get_model("era_resnet.pt", art=False)
 
 artist_testset = torchvision.datasets.ImageFolder(root='artist_dataset_test', transform=transform)
 # print(artist_testset.classes)
-era_testset = torchvision.datasets.ImageFolder(root='era_dataset_test', transform=transform)
+# era_testset = torchvision.datasets.ImageFolder(root='era_dataset_test', transform=transform)
 
 corr_era = 0
 corr_art = 0
