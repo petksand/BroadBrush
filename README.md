@@ -2,9 +2,9 @@
 ## An Art Classifier
 
 ### What is it?
-BroadBrush is an art classifier. Given a piece of art, BroadBrush will determine the artist and era from which it came.
+BroadBrush is an intelligent art classifier. Given a piece of art, BroadBrush will determine the artist and era from which it came.
 
-BroadBrush is trained on 6 eras and 24 artists, summarized in the table below.
+BroadBrush was built with PyTorch and is trained on 6 eras and 24 artists. These are summarized in the table below.
 
 | Era | Artists|
 |-----|------|
